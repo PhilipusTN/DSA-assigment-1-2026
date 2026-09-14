@@ -54,17 +54,13 @@ public function main() returns error? {
     io:println("Goodbye!");
 }
 
-// ---------------------------------------------------------------------
-// 1. Global View
-// ---------------------------------------------------------------------
+
 function globalView() returns error? {
     json response = check libraryClient->get("/assets");
     printAssetList(response);
 }
 
-// ---------------------------------------------------------------------
-// 2. Campus View
-// ---------------------------------------------------------------------
+
 function campusView() returns error? {
     io:print("Institution: ");
     string institution = io:readln().trim();
@@ -82,9 +78,7 @@ function campusView() returns error? {
     printAssetList(response);
 }
 
-// ---------------------------------------------------------------------
-// 3. Loan / Book
-// ---------------------------------------------------------------------
+
 function loanOrBook() returns error? {
     io:print("Asset tag to loan/book: ");
     string tag = io:readln().trim();
@@ -98,9 +92,7 @@ function loanOrBook() returns error? {
     check printResponse(resp, "Asset loaned/booked successfully.");
 }
 
-// ---------------------------------------------------------------------
-// 4. Return
-// ---------------------------------------------------------------------
+
 function returnAsset() returns error? {
     io:print("Asset tag to return: ");
     string tag = io:readln().trim();
@@ -108,18 +100,14 @@ function returnAsset() returns error? {
     check printResponse(resp, "Asset returned — now AVAILABLE.");
 }
 
-// ---------------------------------------------------------------------
-// 5. Overdue Dashboard
-// ---------------------------------------------------------------------
+
 function overdueDashboard() returns error? {
     json response = check libraryClient->get("/assets/overdue");
     io:println("\n--- Overdue Assets ---");
     printAssetList(response);
 }
 
-// ---------------------------------------------------------------------
-// 6. Register a new asset
-// ---------------------------------------------------------------------
+
 function registerAsset() returns error? {
     io:print("Asset tag (unique): ");
     string tag = io:readln().trim();
@@ -150,9 +138,7 @@ function registerAsset() returns error? {
     check printResponse(resp, "Asset registered.");
 }
 
-// ---------------------------------------------------------------------
-// 7. Schedule Manager
-// ---------------------------------------------------------------------
+
 function scheduleManager() returns error? {
     io:print("Asset tag: ");
     string tag = io:readln().trim();
@@ -186,9 +172,7 @@ function scheduleManager() returns error? {
     }
 }
 
-// ---------------------------------------------------------------------
-// 8. Manage institutions
-// ---------------------------------------------------------------------
+
 function manageInstitutions() returns error? {
     io:println("1. List institutions   2. Add institution   3. Remove institution");
     io:print("Choice: ");
@@ -213,9 +197,7 @@ function manageInstitutions() returns error? {
     }
 }
 
-// ---------------------------------------------------------------------
-// 9. Work orders
-// ---------------------------------------------------------------------
+
 function workOrders() returns error? {
     io:print("Asset tag: ");
     string tag = io:readln().trim();
@@ -257,9 +239,7 @@ function workOrders() returns error? {
     }
 }
 
-// ---------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------
+
 function printAssetList(json response) {
     if response is json[] {
         if response.length() == 0 {
