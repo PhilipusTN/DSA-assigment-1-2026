@@ -2,38 +2,36 @@ syntax = "proto3";
 
 package rental;
 
-// Rental Accommodation System — Ministry of Tourism
 
 service RentalService {
-    // Simple RPC — a Host registers a new listing, gets back a property_id.
+    
     rpc addProperty (PropertyRequest) returns (PropertyIdResponse);
 
-    // Client-side streaming — many user profiles streamed up, one summary back.
+    
     rpc createUsers (stream UserProfile) returns (UserCreationSummary);
 
-    // Simple RPC — a Host updates price/status using property_id as the key.
+    
     rpc updateProperty (UpdatePropertyRequest) returns (PropertyResponse);
 
-    // Simple RPC — a Host deletes a listing; server returns the Host's
-    // remaining properties in that region.
+    
+    
     rpc removeProperty (RemovePropertyRequest) returns (PropertyList);
 
-    // Server-side streaming — properties streamed back one by one,
-    // optionally filtered by location/price.
+   
+    
     rpc listAvailableProperties (ListPropertiesRequest) returns (stream PropertyResponse);
 
-    // Simple RPC — look up one property by id.
+    
     rpc searchProperty (SearchPropertyRequest) returns (PropertyResponse);
 
-    // Simple RPC — a Guest requests dates; added to a temporary booking cart.
+    
     rpc bookProperty (BookPropertyRequest) returns (BookingCartResponse);
 
-    // Simple RPC — finalize a cart entry: validate no overlap, price it,
-    // return a confirmation, and clear the cart entry.
+    
     rpc confirmBooking (ConfirmBookingRequest) returns (BookingConfirmation);
 }
 
-// Enums
+
 
 enum PropertyStatus {
     AVAILABLE = 0;
@@ -46,7 +44,7 @@ enum UserRole {
     GUEST = 1;
 }
 
-// Messages
+
 
 message PropertyRequest {
     string host_id = 1;
@@ -102,9 +100,9 @@ message PropertyList {
 }
 
 message ListPropertiesRequest {
-    string location_filter = 1;   // empty string = no filter
-    double min_price = 2;         // 0 = no lower bound
-    double max_price = 3;         // 0 = no upper bound
+    string location_filter = 1;   
+    double min_price = 2;         
+    double max_price = 3;         
 }
 
 message SearchPropertyRequest {
@@ -114,8 +112,8 @@ message SearchPropertyRequest {
 message BookPropertyRequest {
     string guest_id = 1;
     string property_id = 2;
-    string check_in = 3;   // ISO-8601 date, e.g. "2026-10-01"
-    string check_out = 4;  // ISO-8601 date
+    string check_in = 3;   
+    string check_out = 4;  
 }
 
 message BookingCartResponse {
