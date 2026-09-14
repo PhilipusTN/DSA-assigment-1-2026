@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package rental;
+
+// ==========================================================================
+// Rental Accommodation System — Ministry of Tourism
+// ==========================================================================
+
+service RentalService {
+    // Simple RPC — a Host registers a new listing, gets back a property_id.
+    rpc addProperty (PropertyRequest) returns (PropertyIdResponse);
+
+    // Client-side streaming — many user profiles streamed up, one summary back.
+    rpc createUsers (stream UserProfile) returns (UserCreationSummary);
+
+    // Simple RPC — a Host updates price/status using property_id as the key.
+    rpc updateProperty (UpdatePropertyRequest) returns (PropertyResponse);
+
+    // Simple RPC — a Host deletes a listing; server returns the Host's
+    // remaining properties in that region.
+    rpc removeProperty (RemovePropertyRequest) returns (PropertyList);
+
+    // Server-side streaming — properties streamed back one by one,
+    // optionally filtered by location/price.
+    rpc listAvailableProperties (ListPropertiesRequest) returns (stream PropertyResponse);
+
+    // Simple RPC — look up one property by id.
+    rpc searchProperty (SearchPropertyRequest) returns (PropertyResponse);
+
+    // Simple RPC — a Guest requests dates; added to a temporary booking cart.
+    rpc bookProperty (BookPropertyRequest) returns (BookingCartResponse);
+
+    // Simple RPC — finalize a cart entry: validate no overlap, price it,
+    // return a confirmation, and clear the cart entry.
+    rpc confirmBooking (ConfirmBookingRequest) returns (BookingConfirmation);
+}
+
+// --------------------------------------------------------------------------
+// Enums
+// --------------------------------------------------------------------------
+
+enum PropertyStatus {
+    AVAILABLE = 0;
+    UNAVAILABLE = 1;
+    MAINTENANCE = 2;
+}
+
+enum UserRole {
+    HOST = 0;
+    GUEST = 1;
+}
+
+// --------------------------------------------------------------------------
+// Messages
+// --------------------------------------------------------------------------
+
+message PropertyRequest {
+    string host_id = 1;
+    string name = 2;
+    string location = 3;
+    string property_type = 4;
+    double price_per_night = 5;
+    PropertyStatus status = 6;
+}
+
+message PropertyIdResponse {
+    string property_id = 1;
+    string message = 2;
+}
+
+message UserProfile {
+    string user_id = 1;
+    string name = 2;
+    string email = 3;
+    UserRole role = 4;
+}
+
+message UserCreationSummary {
+    int32 total_created = 1;
+    string message = 2;
+}
+
+message UpdatePropertyRequest {
+    string property_id = 1;
+    double price_per_night = 2;
+    PropertyStatus status = 3;
+}
+
+message PropertyResponse {
+    string property_id = 1;
+    string host_id = 2;
+    string name = 3;
+    string location = 4;
+    string property_type = 5;
+    double price_per_night = 6;
+    PropertyStatus status = 7;
+    bool found = 8;
+    string message = 9;
+}
+
+message RemovePropertyRequest {
+    string property_id = 1;
+    string host_id = 2;
+}
+
+message PropertyList {
+    repeated PropertyResponse properties = 1;
+}
+
+message ListPropertiesRequest {
+    string location_filter = 1;   // empty string = no filter
+    double min_price = 2;         // 0 = no lower bound
+    double max_price = 3;         // 0 = no upper bound
+}
+
+message SearchPropertyRequest {
+    string property_id = 1;
+}
+
+message BookPropertyRequest {
+    string guest_id = 1;
+    string property_id = 2;
+    string check_in = 3;   // ISO-8601 date, e.g. "2026-10-01"
+    string check_out = 4;  // ISO-8601 date
+}
+
+message BookingCartResponse {
+    string cart_id = 1;
+    bool success = 2;
+    string message = 3;
+}
+
+message ConfirmBookingRequest {
+    string cart_id = 1;
+    string guest_id = 2;
+}
+
+message BookingConfirmation {
+    bool success = 1;
+    string booking_id = 2;
+    double total_cost = 3;
+    string message = 4;
+}
