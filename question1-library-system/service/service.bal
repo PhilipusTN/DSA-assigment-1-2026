@@ -3,10 +3,7 @@ import ballerina/log;
 import ballerina/time;
 import ballerina/uuid;
 
-// ==========================================================================
-// In-memory "database" — Maps keyed by the unique assetTag / institution name.
-// (Per the brief: "Database: using Map or a table")
-// ==========================================================================
+
 map<Asset> assetStore = {};
 map<Institution> institutionStore = {};
 
@@ -25,11 +22,9 @@ listener http:Listener libraryListener = new (8080);
 
 service /library on libraryListener {
 
-    // ---------------------------------------------------------------
-    // A. Asset Management — CRUD
-    // ---------------------------------------------------------------
+    
 
-    // Create a new asset
+    
     resource function post assets(@http:Payload Asset newAsset)
             returns http:Created|http:Conflict|http:BadRequest {
 
@@ -44,7 +39,7 @@ service /library on libraryListener {
 
         assetStore[newAsset.assetTag] = newAsset;
 
-        // Auto-register the institution/site if this is the first time we see it.
+        
         Institution? existing = institutionStore[newAsset.institution];
         if existing is () {
             institutionStore[newAsset.institution] = {name: newAsset.institution, sites: [newAsset.site]};
@@ -57,12 +52,12 @@ service /library on libraryListener {
         return <http:Created>{body: newAsset};
     }
 
-    // B. View all assets — Global View
+    
     resource function get assets() returns Asset[] {
         return assetStore.toArray();
     }
 
-    // Look up a single asset
+    
     resource function get assets/[string assetTag]() returns Asset|http:NotFound {
         Asset? a = assetStore[assetTag];
         if a is Asset {
@@ -71,7 +66,7 @@ service /library on libraryListener {
         return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
     }
 
-    // Update an existing asset (full replace of the editable fields)
+    
     resource function put assets/[string assetTag](@http:Payload Asset updated)
             returns Asset|http:NotFound|http:BadRequest {
 
@@ -85,7 +80,7 @@ service /library on libraryListener {
         return updated;
     }
 
-    // Remove an asset
+    
     resource function delete assets/[string assetTag]() returns http:Ok|http:NotFound {
         if !assetStore.hasKey(assetTag) {
             return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
@@ -94,9 +89,7 @@ service /library on libraryListener {
         return <http:Ok>{body: {message: "Deleted " + assetTag}};
     }
 
-    // ---------------------------------------------------------------
-    // View assets by institution and site — Campus View
-    // ---------------------------------------------------------------
+    
 
     resource function get institutions/[string institution]/assets() returns Asset[] {
         return assetStore.toArray().filter(a => a.institution == institution);
@@ -106,10 +99,7 @@ service /library on libraryListener {
         return assetStore.toArray().filter(a => a.institution == institution && a.site == site);
     }
 
-    // ---------------------------------------------------------------
-    // Manage institutions — add / remove / list
-    // ---------------------------------------------------------------
-
+    
     resource function post institutions(@http:Payload Institution inst)
             returns http:Created|http:Conflict {
         if institutionStore.hasKey(inst.name) {
@@ -135,7 +125,7 @@ service /library on libraryListener {
         if !institutionStore.hasKey(institution) {
             return <http:NotFound>{body: errorBody("Institution not found: " + institution)};
         }
-        // Guard: don't silently orphan assets that still belong to this institution.
+        
         boolean inUse = assetStore.toArray().some(a => a.institution == institution);
         if inUse {
             return <http:Conflict>{
