@@ -93,7 +93,7 @@ function addProperty() returns error? {
     io:println("✓ " + res.message + " -> property_id = " + res.property_id);
 }
 
-// -------- 2. create_users (client streaming) --------
+// 2. create users
 function registerUsers() returns error? {
     io:println("Enter user details. Leave name blank to finish and send the batch.");
     CreateUsersStreamingClient createUsersStreamingClient = check rentalClient->createUsers();
@@ -128,7 +128,7 @@ function registerUsers() returns error? {
         io:println("✗ No confirmation received from server.");
     }
 }
-// -------- 3. update_property --------
+// 3. update property
 function updateProperty() returns error? {
     io:print("Property id: ");
     string id = io:readln().trim();
@@ -187,7 +187,7 @@ function listAvailable() returns error? {
         max_price: maxP
     });
 
-    io:println("--- Available properties ---");
+    io:println("=== Available properties ==");
     int count = 0;
     error? e = results.forEach(function(PropertyResponse p) {
         count += 1;
