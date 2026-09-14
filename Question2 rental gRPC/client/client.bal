@@ -1,10 +1,6 @@
 import ballerina/grpc;
 import ballerina/io;
 
-// NOTE: Run `bal grpc --input ../proto/rental.proto --output .` in this
-// folder first — it generates `rental_pb.bal`, which supplies the
-// `RentalServiceClient` class and all message/enum types used below.
-
 final RentalServiceClient rentalClient = check new ("http://localhost:9090");
 
 int userCounter = 0;
