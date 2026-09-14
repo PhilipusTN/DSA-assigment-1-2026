@@ -10,7 +10,7 @@ map<Institution> institutionStore = {};
 function nowDateString() returns string {
     time:Utc now = time:utcNow();
     string ts = time:utcToString(now);
-    return ts.substring(0, 10); // "YYYY-MM-DD"
+    return ts.substring(0, 10); 
 }
 
 function errorBody(string message) returns ErrorDetail => {
