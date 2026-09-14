@@ -64,7 +64,7 @@ function readStatus() returns PropertyStatus {
     return AVAILABLE;
 }
 
-//1. add property
+
 function addProperty() returns error? {
     io:print("Host id: ");
     string hostId = io:readln().trim();
@@ -89,7 +89,7 @@ function addProperty() returns error? {
     io:println("✓ " + res.message + " -> property_id = " + res.property_id);
 }
 
-// 2. create users
+
 function registerUsers() returns error? {
     io:println("Enter user details. Leave name blank to finish and send the batch.");
     CreateUsersStreamingClient createUsersStreamingClient = check rentalClient->createUsers();
@@ -124,7 +124,7 @@ function registerUsers() returns error? {
         io:println("✗ No confirmation received from server.");
     }
 }
-// 3. update property
+
 function updateProperty() returns error? {
     io:print("Property id: ");
     string id = io:readln().trim();
@@ -144,7 +144,7 @@ function updateProperty() returns error? {
     }
 }
 
-//4.remove property
+
 function removeProperty() returns error? {
     io:print("Property id: ");
     string id = io:readln().trim();
@@ -161,7 +161,7 @@ function removeProperty() returns error? {
     }
 }
 
-// 5. list available properties (server streaming)
+
 function readOptionalFloat(string prompt) returns float|error {
     io:print(prompt);
     string s = io:readln().trim();
@@ -198,7 +198,7 @@ function listAvailable() returns error? {
     }
 }
 
-// 6. search property
+
 function searchProperty() returns error? {
     io:print("Property id: ");
     string id = io:readln().trim();
@@ -211,7 +211,7 @@ function searchProperty() returns error? {
     }
 }
 
-// 7. book property
+
 function bookProperty() returns error? {
     io:print("Guest id: ");
     string guestId = io:readln().trim();
@@ -235,7 +235,7 @@ function bookProperty() returns error? {
     }
 }
 
-// 8. confirm booking
+
 function confirmBooking() returns error? {
     io:print("Cart id: ");
     string cartId = io:readln().trim();
