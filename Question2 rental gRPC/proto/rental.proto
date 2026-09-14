@@ -2,9 +2,7 @@ syntax = "proto3";
 
 package rental;
 
-// ==========================================================================
 // Rental Accommodation System — Ministry of Tourism
-// ==========================================================================
 
 service RentalService {
     // Simple RPC — a Host registers a new listing, gets back a property_id.
@@ -35,9 +33,7 @@ service RentalService {
     rpc confirmBooking (ConfirmBookingRequest) returns (BookingConfirmation);
 }
 
-// --------------------------------------------------------------------------
 // Enums
-// --------------------------------------------------------------------------
 
 enum PropertyStatus {
     AVAILABLE = 0;
@@ -50,9 +46,7 @@ enum UserRole {
     GUEST = 1;
 }
 
-// --------------------------------------------------------------------------
 // Messages
-// --------------------------------------------------------------------------
 
 message PropertyRequest {
     string host_id = 1;
