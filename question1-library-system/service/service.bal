@@ -136,16 +136,14 @@ service /library on libraryListener {
         return <http:Ok>{body: {message: "Institution removed: " + institution}};
     }
 
-    // ---------------------------------------------------------------
-    // Maintenance & Overdue checks
-    // ---------------------------------------------------------------
+    
 
-    // Any asset with at least one schedule whose dueDate has already passed.
+    
     resource function get assets/overdue() returns Asset[] {
         return assetStore.toArray().filter(a => a.schedules.some(s => s.dueDate < nowDateString()));
     }
 
-    // Quick status + booking-schedule check for one asset
+    
     resource function get assets/[string assetTag]/status()
             returns record {| string assetTag; Status status; Schedule[] schedules; |}|http:NotFound {
         Asset? a = assetStore[assetTag];
@@ -155,9 +153,7 @@ service /library on libraryListener {
         return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
     }
 
-    // ---------------------------------------------------------------
-    // Loaning & booking a resource (used by the client's "Loan/Book" screen)
-    // ---------------------------------------------------------------
+    
 
     resource function post assets/[string assetTag]/loan(@http:Payload LoanRequest req)
             returns Asset|http:NotFound|http:Conflict {
@@ -194,9 +190,7 @@ service /library on libraryListener {
         return a;
     }
 
-    // ---------------------------------------------------------------
-    // Component & Schedule Management
-    // ---------------------------------------------------------------
+    
 
     resource function post assets/[string assetTag]/components(@http:Payload Component comp)
             returns Asset|http:NotFound|http:Conflict {
@@ -253,9 +247,7 @@ service /library on libraryListener {
         return a;
     }
 
-    // ---------------------------------------------------------------
-    // Work Orders & Task Tracking
-    // ---------------------------------------------------------------
+    
 
     resource function post assets/[string assetTag]/workorders(@http:Payload WorkOrder wo)
             returns Asset|http:NotFound {
@@ -264,7 +256,7 @@ service /library on libraryListener {
             return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
         }
         a.workOrders.push(wo);
-        // Opening a work order implies the asset needs attention.
+        
         a.status = "UNDER_MAINTENANCE";
         assetStore[assetTag] = a;
         return a;
@@ -309,7 +301,7 @@ service /library on libraryListener {
         return a;
     }
 
-    // Sub-tasks within a work order, e.g. "replace screen"
+    
     resource function post assets/[string assetTag]/workorders/[string orderId]/tasks(@http:Payload Task t)
             returns Asset|http:NotFound {
         Asset? a = assetStore[assetTag];
