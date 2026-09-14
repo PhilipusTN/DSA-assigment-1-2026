@@ -18,9 +18,9 @@ type ConfirmedRange record {|
     string checkIn;
     string checkOut;
 |};
-map<ConfirmedRange[]> propertyBookings = {}; // property_id confirmed date ranges
+map<ConfirmedRange[]> propertyBookings = {}; 
 
-// Helpers
+
 
 function dayCount(string isoDate) returns int|error {
     time:Utc utc = check time:utcFromString(isoDate + "T00:00:00.00Z");
@@ -54,14 +54,14 @@ function emptyPropertyResponse(string propertyId, string message) returns Proper
     message: message
 };
 
-// Service
+
 
 listener grpc:Listener rentalListener = new (9090);
 
 @grpc:Descriptor {value: RENTAL_DESC}
 service "RentalService" on rentalListener {
 
-    // -------- add_property
+    
     remote function addProperty(PropertyRequest req) returns PropertyIdResponse|error {
         if req.name.trim().length() == 0 || req.price_per_night <= 0.0 {
             return {property_id: "", message: "ERROR: name and a positive price_per_night are required"};
@@ -83,7 +83,7 @@ service "RentalService" on rentalListener {
         return {property_id: id, message: "Property registered successfully"};
     }
 
-    // create_users (Client-side streaming)
+    
     remote function createUsers(stream<UserProfile, grpc:Error?> clientStream) returns UserCreationSummary|error {
         int count = 0;
         error? e = clientStream.forEach(function(UserProfile u) {
@@ -96,7 +96,7 @@ service "RentalService" on rentalListener {
         return {total_created: count, message: count.toString() + " user(s) registered successfully"};
     }
 
-    //update_property 
+     
     remote function updateProperty(UpdatePropertyRequest req) returns PropertyResponse|error {
         PropertyResponse? p = propertyStore[req.property_id];
         if p is () {
@@ -109,7 +109,7 @@ service "RentalService" on rentalListener {
         return p;
     }
 
-    //remove_property 
+    
     remote function removeProperty(RemovePropertyRequest req) returns PropertyList|error {
         PropertyResponse? existing = propertyStore[req.property_id];
         if existing is PropertyResponse && existing.host_id == req.host_id {
@@ -119,7 +119,7 @@ service "RentalService" on rentalListener {
         return {properties: remaining};
     }
 
-    //list_available_properties (Server-side streaming)
+    
     remote function listAvailableProperties(ListPropertiesRequest req) returns stream<PropertyResponse, error?>|error {
         PropertyResponse[] matches = propertyStore.toArray().filter(p =>
             p.status == AVAILABLE
@@ -130,7 +130,7 @@ service "RentalService" on rentalListener {
         return matches.toStream();
     }
 
-    //search_property
+    
     remote function searchProperty(SearchPropertyRequest req) returns PropertyResponse|error {
         PropertyResponse? p = propertyStore[req.property_id];
         if p is PropertyResponse {
@@ -141,7 +141,7 @@ service "RentalService" on rentalListener {
         return emptyPropertyResponse(req.property_id, "Not Available");
     }
 
-    //book_property
+    
     remote function bookProperty(BookPropertyRequest req) returns BookingCartResponse|error {
         PropertyResponse? p = propertyStore[req.property_id];
         if p is () {
@@ -164,7 +164,7 @@ service "RentalService" on rentalListener {
         return {cart_id: cartId, success: true, message: "Added to booking cart — call confirm_booking to finalize"};
     }
 
-    //confirm_booking
+    
     remote function confirmBooking(ConfirmBookingRequest req) returns BookingConfirmation|error {
         CartEntry? entry = bookingCart[req.cart_id];
         if entry is () {
@@ -182,7 +182,7 @@ service "RentalService" on rentalListener {
             return {success: false, booking_id: "", total_cost: 0.0, message: "Property is no longer available"};
         }
 
-        // Verify no date overlap
+        
         ConfirmedRange[] existingRanges = propertyBookings[entry.propertyId] ?: [];
         foreach ConfirmedRange r in existingRanges {
             if rangesOverlap(entry.checkIn, entry.checkOut, r.checkIn, r.checkOut) {
