@@ -146,5 +146,216 @@ service /library on libraryListener {
         return <http:Ok>{body: {message: "Institution removed: " + institution}};
     }
 
-    
+    // ---------------------------------------------------------------
+    // Maintenance & Overdue checks
+    // ---------------------------------------------------------------
+
+    // Any asset with at least one schedule whose dueDate has already passed.
+    resource function get assets/overdue() returns Asset[] {
+        return assetStore.toArray().filter(a => a.schedules.some(s => s.dueDate < nowDateString()));
+    }
+
+    // Quick status + booking-schedule check for one asset
+    resource function get assets/[string assetTag]/status()
+            returns record {| string assetTag; Status status; Schedule[] schedules; |}|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is Asset {
+            return {assetTag: a.assetTag, status: a.status, schedules: a.schedules};
+        }
+        return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+    }
+
+    // ---------------------------------------------------------------
+    // Loaning & booking a resource (used by the client's "Loan/Book" screen)
+    // ---------------------------------------------------------------
+
+    resource function post assets/[string assetTag]/loan(@http:Payload LoanRequest req)
+            returns Asset|http:NotFound|http:Conflict {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        if a.status != "AVAILABLE" {
+            return <http:Conflict>{body: errorBody("Asset '" + assetTag + "' is not AVAILABLE")};
+        }
+        a.status = "LOANED_OUT";
+        Schedule sch = {
+            scheduleId: uuid:createType1AsString().substring(0, 8),
+            'type: "BOOKING",
+            dueDate: req.dueDate,
+            description: "Loaned/booked to " + req.borrower
+        };
+        a.schedules.push(sch);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function post assets/[string assetTag]/'return()
+            returns Asset|http:NotFound|http:Conflict {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        if a.status != "LOANED_OUT" && a.status != "OCCUPIED" {
+            return <http:Conflict>{body: errorBody("Asset '" + assetTag + "' was not on loan")};
+        }
+        a.status = "AVAILABLE";
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    // ---------------------------------------------------------------
+    // Component & Schedule Management
+    // ---------------------------------------------------------------
+
+    resource function post assets/[string assetTag]/components(@http:Payload Component comp)
+            returns Asset|http:NotFound|http:Conflict {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        if a.components.some(c => c.compId == comp.compId) {
+            return <http:Conflict>{body: errorBody("Component id already exists on this asset")};
+        }
+        a.components.push(comp);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function delete assets/[string assetTag]/components/[string compId]()
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        a.components = a.components.filter(c => c.compId != compId);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function post assets/[string assetTag]/schedules(@http:Payload Schedule sch)
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        a.schedules.push(sch);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function get assets/[string assetTag]/schedules() returns Schedule[]|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is Asset {
+            return a.schedules;
+        }
+        return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+    }
+
+    resource function delete assets/[string assetTag]/schedules/[string scheduleId]()
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        a.schedules = a.schedules.filter(s => s.scheduleId != scheduleId);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    // ---------------------------------------------------------------
+    // Work Orders & Task Tracking
+    // ---------------------------------------------------------------
+
+    resource function post assets/[string assetTag]/workorders(@http:Payload WorkOrder wo)
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        a.workOrders.push(wo);
+        // Opening a work order implies the asset needs attention.
+        a.status = "UNDER_MAINTENANCE";
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function get assets/[string assetTag]/workorders() returns WorkOrder[]|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is Asset {
+            return a.workOrders;
+        }
+        return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+    }
+
+    resource function put assets/[string assetTag]/workorders/[string orderId](@http:Payload WorkOrderStatusUpdate upd)
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        boolean found = false;
+        foreach var wo in a.workOrders {
+            if wo.orderId == orderId {
+                wo.status = upd.status;
+                found = true;
+            }
+        }
+        if found && upd.status == "CLOSED" && !a.workOrders.some(w => w.status != "CLOSED") {
+            a.status = "AVAILABLE";
+        }
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function delete assets/[string assetTag]/workorders/[string orderId]()
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        a.workOrders = a.workOrders.filter(w => w.orderId != orderId);
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    // Sub-tasks within a work order, e.g. "replace screen"
+    resource function post assets/[string assetTag]/workorders/[string orderId]/tasks(@http:Payload Task t)
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        boolean found = false;
+        foreach var wo in a.workOrders {
+            if wo.orderId == orderId {
+                wo.tasks.push(t);
+                found = true;
+            }
+        }
+        if !found {
+            return <http:NotFound>{body: errorBody("Work order not found: " + orderId)};
+        }
+        assetStore[assetTag] = a;
+        return a;
+    }
+
+    resource function put assets/[string assetTag]/workorders/[string orderId]/tasks/[string taskId](@http:Payload TaskStatusUpdate upd)
+            returns Asset|http:NotFound {
+        Asset? a = assetStore[assetTag];
+        if a is () {
+            return <http:NotFound>{body: errorBody("Asset not found: " + assetTag)};
+        }
+        foreach var wo in a.workOrders {
+            if wo.orderId == orderId {
+                foreach var t in wo.tasks {
+                    if t.taskId == taskId {
+                        t.status = upd.status;
+                    }
+                }
+            }
+        }
+        assetStore[assetTag] = a;
+        return a;
+    }
 }
